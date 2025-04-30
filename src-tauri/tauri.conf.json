@@ -19,6 +19,15 @@
       }
     ],
     "security": {
+      "assetProtocol": {
+        "enable": true,
+        "scope": {
+          "requireLiteralLeadingDot": false,
+          "allow": [
+            "**/*"
+          ]
+        }
+      },
       "csp": null
     }
   },

@@ -10,6 +10,7 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
+            // setting up gtk window
             let main_webview = app.get_webview_window("main").unwrap();
             let gtk_window = main_webview.gtk_window().unwrap();
 
