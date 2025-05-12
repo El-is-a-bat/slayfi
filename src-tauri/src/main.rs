@@ -22,7 +22,8 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::exit,
-            commands::list_applications
+            commands::list_applications,
+            commands::start_program
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri app");

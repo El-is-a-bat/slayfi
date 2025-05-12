@@ -3,10 +3,17 @@ use std::path::PathBuf;
 use applications::common::SearchPath;
 use applications::{App, AppInfo, AppInfoContext};
 use itertools::Itertools;
+use std::process::{self, Command};
 
 #[tauri::command]
 pub fn exit(app_handle: tauri::AppHandle) {
     app_handle.exit(0);
+}
+
+#[tauri::command]
+pub fn start_program(exec: String) -> bool {
+    Command::new(exec).spawn().expect("Failed to start program");
+    true
 }
 
 #[tauri::command]

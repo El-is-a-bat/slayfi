@@ -1,4 +1,28 @@
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     height: 100%;
     background-color: paleturquoise;
+}
+
+.selected {
+    background-color: white;
+}
+
+.entry {
+    display: flex;
+}
+
+.app-icon {
+    width: 42px;
+    height: 42px;
+    padding: 2px;
+    margin-right: 5px;
+}
+
+.app-name {
+    display: flex;
+    align-items: center;
 }
