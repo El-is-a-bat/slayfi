@@ -16,7 +16,8 @@ fn main() {
 
             gtk_window.set_decorated(false);
             gtk_window.set_resizable(false);
-            gtk_window.set_default_size(650, 400);
+            gtk_window.set_width_request(600);
+            gtk_window.set_height_request(400);
 
             Ok(())
         })
