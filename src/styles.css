@@ -1,3 +1,21 @@
+:root {
+    --cyan-accent: #00f0ff;
+    --cyan-accent-inactive: #0a9199;
+    --cyan-text: #6df4f5;
+    --cyan-sidebar-text: #00cad1;
+    --cyan-header: #163339;
+    --amoled: #000000;
+    --back-side: #14121b;
+    --back: #090813;
+    --yellow-accent: #fcee0a;
+    --net-link: #cfec57;
+    --red-accent: #bd1f26;
+    --red: #842623;
+    --red-hover: #4e191c;
+    --lime: #15ff00;
+    --green: #1bd888;
+}
+
 html,
 body {
     height: 100%;
@@ -22,7 +40,6 @@ body {
 }
 
 .app-list {
-    height: 70vh;
     overflow: auto;
 }
 
