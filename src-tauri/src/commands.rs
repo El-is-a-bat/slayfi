@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use applications::common::SearchPath;
 use applications::{App, AppInfo, AppInfoContext};
 use itertools::Itertools;
-use std::process::{self, Command};
+use std::process::Command;
 
 #[tauri::command]
 pub fn exit(app_handle: tauri::AppHandle) {
@@ -19,11 +19,10 @@ pub fn start_program(exec: String) -> bool {
 #[tauri::command]
 pub fn list_applications() -> Vec<App> {
     let extra_paths = vec![
-        SearchPath::new(
-            PathBuf::from("/home/elis/.local/share/Steam/steamapps/common/"),
-            u8::MAX,
-        ),
-        SearchPath::new(PathBuf::from("/home/elis/Desktop/"), u8::MAX),
+        //SearchPath::new(
+        //    PathBuf::from("/home/elis/.local/share/Steam/steamapps/common/"),
+        //    u8::MAX,
+        //),
     ];
 
     let mut ctx = AppInfoContext::new(extra_paths);

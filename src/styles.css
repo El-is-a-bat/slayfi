@@ -1,10 +1,15 @@
-html {
-    scroll-behavior: smooth;
-}
-
+html,
 body {
     height: 100%;
-    background-color: paleturquoise;
+    margin: 0;
+    background: transparent;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 .selected {
@@ -13,6 +18,12 @@ body {
 
 .entry {
     display: flex;
+    overflow-y: auto;
+}
+
+.app-list {
+    height: 70vh;
+    overflow: auto;
 }
 
 .app-icon {
@@ -25,4 +36,11 @@ body {
 .app-name {
     display: flex;
     align-items: center;
+}
+
+
+
+#filter {
+    margin: 5px;
+    text-align: center;
 }

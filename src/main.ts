@@ -8,18 +8,38 @@ interface App {
     app_desktop_path: string;
 }
 
+let apps: App[] = [];
+
 async function fetchApps() {
-    const apps: App[] = await invoke("list_applications");
-    return apps;
+    apps = await invoke("list_applications");
 }
 
-function createAppsEntries(apps: App[]) {
+function createAppsEntries() {
     const container = document.getElementById("app-list");
+
+    if (!container) {
+        //TODO tell user that container is missing
+        console.log("container is missing");
+    }
 
     apps.forEach(app => {
         const entry = document.createElement("div");
         entry.className = "entry";
         entry.id = app.name;
+
+        entry.addEventListener("click", () => {
+            const previousSelected = document.querySelector(".entry.selected");
+            if (previousSelected) {
+                previousSelected.classList.remove("selected");
+            }
+            entry.classList.add("selected");
+        });
+        entry.addEventListener("dblclick", () => {
+            const appName = entry.querySelector(".app-name")?.textContent;
+            if (appName) {
+                runApp(appName);
+            }
+        });
         container?.appendChild(entry);
 
         const icon = document.createElement("img");
@@ -29,51 +49,60 @@ function createAppsEntries(apps: App[]) {
 
         const name = document.createElement("div");
         name.className = "app-name";
-        name.textContent = app.app_path_exe;
+        name.textContent = app.name;
         entry.appendChild(name);
     })
 
 }
 
-fetchApps().then(apps => {
+fetchApps().then(() => {
+    if (apps.length === 0) {
+        // TODO show that apps not found
+        console.log("Apps not found");
+        return;
+    }
+
     const filter = document.getElementById("filter") as HTMLInputElement;
     filter.focus();
     filter.oninput = showFiltered;
 
-    createAppsEntries(apps);
+    createAppsEntries();
+
     const firstApp = document.getElementById("app-list")?.firstElementChild;
     if (firstApp) {
         firstApp?.classList.add("selected");
+    } else {
+        console.log("First app entry not found");
+        return;
     }
 
     document.addEventListener("keydown", (e) => {
-        const apps = document.querySelectorAll(".entry");
-        if (apps.length === 0) {
-            return;
-        }
+        e.preventDefault();
+        const appsContainers = document.querySelectorAll(".entry");
 
         const selected = document.querySelector(".entry.selected");
         if (selected === null) {
             return;
+        } else {
+            console.log("Selected item is missing");
         }
-        let index = Array.from(apps).indexOf(selected);
+
+        let index = Array.from(appsContainers).indexOf(selected);
 
         if (e.key === "ArrowDown") {
-            index = (index + 1) % apps.length;
-            e.preventDefault();
+            index = (index + 1) % appsContainers.length;
         } else if (e.key === "ArrowUp") {
-            index = (index - 1 + apps.length) % apps.length;
-            e.preventDefault();
+            index = (index - 1 + appsContainers.length) % appsContainers.length;
         } else if (e.key === "Enter") {
             const appName = selected.querySelector(".app-name")?.textContent;
-            invoke("start_program", { "exec": appName });
+            if (appName) {
+                runApp(appName);
+            }
         }
 
-        if (selected) {
-            selected.classList.remove("selected");
-            selected.scrollIntoView();
-        }
-        apps[index].classList.add("selected");
+        selected.classList.remove("selected");
+        appsContainers[index].classList.add("selected");
+        appsContainers[index].scrollIntoView({ behavior: "smooth" });
     })
 
 })
@@ -94,6 +123,10 @@ function showFiltered() {
             container.style.display = "none";
         }
     });
+}
+
+function runApp(appName: string) {
+    invoke("start_program", { "exec": apps.find(app => app.name == appName)?.app_path_exe });
 }
 
 window.addEventListener("keydown", (event) => {
