@@ -14,7 +14,12 @@
     "windows": [
       {
         "title": "slayfi",
+        "alwaysOnTop": true,
+        "fullscreen": false,
+        "center": true,
         "decorations": false,
+        "resizable": true,
+        "focus": true,
         "transparent": true,
         "width": 10,
         "height": 60

@@ -8,13 +8,26 @@ interface App {
     app_desktop_path: string;
 }
 
+interface SlayfiConfig {
+    apps_per_page: number
+}
+
 let apps: App[] = [];
+let config: SlayfiConfig;
+let currentPage = 1;
+let maxPages;
+
+await invoke<string>("get_config").then((raw) => {
+    config = JSON.parse(raw) as SlayfiConfig;
+    console.log("Config loaded: ", config);
+});
+
 
 async function fetchApps() {
     apps = await invoke("list_applications");
 }
 
-function createAppsEntries() {
+async function createAppsEntries() {
     const container = document.getElementById("app-list");
 
     if (!container) {
@@ -40,6 +53,7 @@ function createAppsEntries() {
                 runApp(appName);
             }
         });
+
         container?.appendChild(entry);
 
         const icon = document.createElement("img");
@@ -55,29 +69,20 @@ function createAppsEntries() {
 
 }
 
-fetchApps().then(() => {
-    if (apps.length === 0) {
-        // TODO show that apps not found
-        console.log("Apps not found");
-        return;
-    }
+function selectItem(ind: number) {
 
-    const filter = document.getElementById("filter") as HTMLInputElement;
-    filter.focus();
-    filter.oninput = showFiltered;
+}
 
-    createAppsEntries();
+function nextPage() {
 
-    const firstApp = document.getElementById("app-list")?.firstElementChild;
-    if (firstApp) {
-        firstApp?.classList.add("selected");
-    } else {
-        console.log("First app entry not found");
-        return;
-    }
+}
 
+function prevPage() {
+
+}
+
+async function addAppSelection() {
     document.addEventListener("keydown", (e) => {
-        e.preventDefault();
         const appsContainers = document.querySelectorAll(".entry");
 
         const selected = document.querySelector(".entry.selected");
@@ -89,23 +94,37 @@ fetchApps().then(() => {
 
         let index = Array.from(appsContainers).indexOf(selected);
 
-        if (e.key === "ArrowDown") {
-            index = (index + 1) % appsContainers.length;
-        } else if (e.key === "ArrowUp") {
-            index = (index - 1 + appsContainers.length) % appsContainers.length;
-        } else if (e.key === "Enter") {
-            const appName = selected.querySelector(".app-name")?.textContent;
-            if (appName) {
-                runApp(appName);
-            }
+        switch (e.key) {
+            case "ArrowUp":
+                index = (index - 1 + appsContainers.length) % appsContainers.length;
+                e.preventDefault();
+                break;
+            case "ArrowDown":
+                index = (index + 1) % appsContainers.length;
+                e.preventDefault();
+                break;
+            case "ArrowLeft":
+                e.preventDefault();
+                prevPage();
+                break;
+            case "ArrowRight":
+                e.preventDefault();
+                nextPage();
+                break;
+            case "Enter":
+                const appName = selected.querySelector(".app-name")?.textContent;
+                if (appName) {
+                    runApp(appName);
+                }
+                break;
         }
 
         selected.classList.remove("selected");
         appsContainers[index].classList.add("selected");
-        appsContainers[index].scrollIntoView({ behavior: "smooth" });
+        //appsContainers[index].scrollIntoView({ behavior: "smooth" });
     })
 
-})
+}
 
 function showFiltered() {
     const filter = document.getElementById("filter") as HTMLInputElement;
@@ -135,4 +154,32 @@ window.addEventListener("keydown", (event) => {
     }
 });
 
+async function main() {
+    await fetchApps();
 
+    if (apps.length === 0) {
+        // TODO show that apps not found
+        console.log("Apps not found");
+        return;
+    }
+
+    await createAppsEntries();
+
+    const filter = document.getElementById("filter") as HTMLInputElement;
+    filter.focus();
+    filter.oninput = showFiltered;
+
+    const firstApp = document.getElementById("app-list")?.firstElementChild;
+    if (firstApp) {
+        firstApp?.classList.add("selected");
+    } else {
+        console.log("First app entry not found");
+        return;
+    }
+
+    await addAppSelection();
+
+    await invoke("set_application_size", { width: 50, height: 50 });
+}
+
+main();

@@ -1,9 +1,8 @@
-use std::path::PathBuf;
-
-use applications::common::SearchPath;
 use applications::{App, AppInfo, AppInfoContext};
+use gtk::traits::{GtkWindowExt, WidgetExt};
 use itertools::Itertools;
 use std::process::Command;
+use tauri::{Manager, PhysicalSize, Size};
 
 #[tauri::command]
 pub fn exit(app_handle: tauri::AppHandle) {
@@ -13,17 +12,13 @@ pub fn exit(app_handle: tauri::AppHandle) {
 #[tauri::command]
 pub fn start_program(exec: String) -> bool {
     Command::new(exec).spawn().expect("Failed to start program");
+    //TODO make program to close after program starts
     true
 }
 
 #[tauri::command]
 pub fn list_applications() -> Vec<App> {
-    let extra_paths = vec![
-        //SearchPath::new(
-        //    PathBuf::from("/home/elis/.local/share/Steam/steamapps/common/"),
-        //    u8::MAX,
-        //),
-    ];
+    let extra_paths = vec![];
 
     let mut ctx = AppInfoContext::new(extra_paths);
     ctx.refresh_apps().unwrap(); // must refresh apps before getting them
@@ -38,4 +33,18 @@ pub fn list_applications() -> Vec<App> {
         .cloned()
         .collect();
     apps
+}
+
+#[tauri::command]
+pub fn get_config() -> String {
+    "{\"apps_per_page\":\"5\"}".into()
+}
+
+#[tauri::command]
+pub fn set_application_size(app_handle: tauri::AppHandle, height: u32, width: u32) {
+    if let Some(window) = app_handle.get_window("main") {
+        let _ = window.set_size(Size::Physical(PhysicalSize { width, height }));
+    }
+    println!("Width: {}", width);
+    println!("Height: {}", height);
 }
