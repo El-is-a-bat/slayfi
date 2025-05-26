@@ -14,13 +14,10 @@ interface SlayfiConfig {
 
 let apps: App[] = [];
 let config: SlayfiConfig;
-let currentPage = 1;
-let maxPages;
+let currentPage = 0;
+let maxPages: number;
 
-await invoke<string>("get_config").then((raw) => {
-    config = JSON.parse(raw) as SlayfiConfig;
-    console.log("Config loaded: ", config);
-});
+
 
 
 async function fetchApps() {
@@ -35,7 +32,7 @@ async function createAppsEntries() {
         console.log("container is missing");
     }
 
-    apps.forEach(app => {
+    apps.forEach((app, idx) => {
         const entry = document.createElement("div");
         entry.className = "entry";
         entry.id = app.name;
@@ -54,17 +51,30 @@ async function createAppsEntries() {
             }
         });
 
+        if (idx >= config.apps_per_page) {
+            entry.hidden = true;
+        }
         container?.appendChild(entry);
 
-        const icon = document.createElement("img");
-        icon.src = convertFileSrc(app.icon_path);
-        icon.className = "app-icon";
-        entry.appendChild(icon);
+        // smth like rarity in cyberpunk
+        // TODO later
+        const appType = document.createElement("div");
+        appType.className = "app-type";
+        entry.appendChild(appType);
 
-        const name = document.createElement("div");
-        name.className = "app-name";
-        name.textContent = app.name;
-        entry.appendChild(name);
+        const appInfo = document.createElement("div");
+        appInfo.className = "app-info";
+        entry.appendChild(appInfo);
+
+        const appIcon = document.createElement("img");
+        appIcon.src = convertFileSrc(app.icon_path);
+        appIcon.className = "app-icon";
+        appInfo.appendChild(appIcon);
+
+        const appName = document.createElement("div");
+        appName.className = "app-name";
+        appName.textContent = app.name;
+        appInfo.appendChild(appName);
     })
 
 }
@@ -73,12 +83,32 @@ function selectItem(ind: number) {
 
 }
 
-function nextPage() {
+function setPage(page: number) {
+    console.log("Set page", currentPage);
+    const entries = Array.from(document.getElementsByClassName("entry")) as HTMLDivElement[];
+    entries.forEach(entry => {
+        entry.hidden = true;
+    });
+
+    // TODO research for more elegant way
+    let idx;
+    for (let i = 0; i < config.apps_per_page; i++) {
+        idx = page * config.apps_per_page + i;
+        if (idx < entries.length) {
+            entries[idx].hidden = false;
+        }
+    }
 
 }
 
-function prevPage() {
+function nextPage() {
+    currentPage = (currentPage + 1) % maxPages;
+    setPage(currentPage);
+}
 
+function prevPage() {
+    currentPage = (currentPage - 1 + maxPages) % maxPages;
+    setPage(currentPage);
 }
 
 async function addAppSelection() {
@@ -96,19 +126,30 @@ async function addAppSelection() {
 
         switch (e.key) {
             case "ArrowUp":
-                index = (index - 1 + appsContainers.length) % appsContainers.length;
                 e.preventDefault();
+                index -= 1;
+                if (index < currentPage * config.apps_per_page) {
+                    index = (index + appsContainers.length) % appsContainers.length;
+                    prevPage();
+                }
                 break;
             case "ArrowDown":
-                index = (index + 1) % appsContainers.length;
                 e.preventDefault();
+                index += 1;
+                let lastIdxOnPage = currentPage * config.apps_per_page + config.apps_per_page - 1;
+                if (index > lastIdxOnPage || index >= appsContainers.length) {
+                    index = index % appsContainers.length;
+                    nextPage();
+                }
                 break;
             case "ArrowLeft":
                 e.preventDefault();
+                index = (index - config.apps_per_page + appsContainers.length) % appsContainers.length;
                 prevPage();
                 break;
             case "ArrowRight":
                 e.preventDefault();
+                index = (index + config.apps_per_page) % appsContainers.length;
                 nextPage();
                 break;
             case "Enter":
@@ -118,7 +159,7 @@ async function addAppSelection() {
                 }
                 break;
         }
-
+        console.log("index = ", index);
         selected.classList.remove("selected");
         appsContainers[index].classList.add("selected");
         //appsContainers[index].scrollIntoView({ behavior: "smooth" });
@@ -137,9 +178,9 @@ function showFiltered() {
         app = container.querySelector(".app-name") as HTMLDivElement;
         appName = app.textContent || app.innerText;
         if (appName.toLowerCase().indexOf(filterText) > -1) {
-            container.style.display = "";
+            container.hidden = false;
         } else {
-            container.style.display = "none";
+            container.hidden = true;
         }
     });
 }
@@ -155,6 +196,11 @@ window.addEventListener("keydown", (event) => {
 });
 
 async function main() {
+    await invoke<string>("get_config").then((raw) => {
+        config = JSON.parse(raw) as SlayfiConfig;
+        console.log("Config loaded: ", config);
+    });
+
     await fetchApps();
 
     if (apps.length === 0) {
@@ -162,6 +208,8 @@ async function main() {
         console.log("Apps not found");
         return;
     }
+
+    maxPages = Math.ceil(apps.length / config.apps_per_page)
 
     await createAppsEntries();
 

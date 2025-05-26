@@ -1,5 +1,4 @@
 use applications::{App, AppInfo, AppInfoContext};
-use gtk::traits::{GtkWindowExt, WidgetExt};
 use itertools::Itertools;
 use std::process::Command;
 use tauri::{Manager, PhysicalSize, Size};
@@ -37,7 +36,7 @@ pub fn list_applications() -> Vec<App> {
 
 #[tauri::command]
 pub fn get_config() -> String {
-    "{\"apps_per_page\":\"5\"}".into()
+    "{\"apps_per_page\": 5}".into()
 }
 
 #[tauri::command]
