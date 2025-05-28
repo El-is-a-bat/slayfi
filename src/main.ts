@@ -6,6 +6,7 @@ interface App {
     icon_path: string;
     app_path_exe: string;
     app_desktop_path: string;
+    //times_runned: number;
 }
 
 interface SlayfiConfig {
@@ -13,26 +14,21 @@ interface SlayfiConfig {
 }
 
 let apps: App[] = [];
+// TODO change to list?
+let appsEntries: HTMLDivElement[] = [];
+let availableApps: HTMLDivElement[] = [];
 let config: SlayfiConfig;
 let currentPage = 0;
 let maxPages: number;
-
-
-
+const filter = document.getElementById("filter") as HTMLInputElement;
+const container = document.getElementById("app-list") as HTMLDivElement;
 
 async function fetchApps() {
     apps = await invoke("list_applications");
 }
 
 async function createAppsEntries() {
-    const container = document.getElementById("app-list");
-
-    if (!container) {
-        //TODO tell user that container is missing
-        console.log("container is missing");
-    }
-
-    apps.forEach((app, idx) => {
+    apps.forEach((app: App) => {
         const entry = document.createElement("div");
         entry.className = "entry";
         entry.id = app.name;
@@ -51,10 +47,7 @@ async function createAppsEntries() {
             }
         });
 
-        if (idx >= config.apps_per_page) {
-            entry.hidden = true;
-        }
-        container?.appendChild(entry);
+        appsEntries.push(entry);
 
         // smth like rarity in cyberpunk
         // TODO later
@@ -85,17 +78,16 @@ function selectItem(ind: number) {
 
 function setPage(page: number) {
     console.log("Set page", currentPage);
-    const entries = Array.from(document.getElementsByClassName("entry")) as HTMLDivElement[];
-    entries.forEach(entry => {
-        entry.hidden = true;
-    });
+
+    while (container.firstElementChild) {
+        container.removeChild(container.lastElementChild!);
+    }
 
     // TODO research for more elegant way
-    let idx;
-    for (let i = 0; i < config.apps_per_page; i++) {
+    for (let i = 0, idx; i < config.apps_per_page; i++) {
         idx = page * config.apps_per_page + i;
-        if (idx < entries.length) {
-            entries[idx].hidden = false;
+        if (idx < availableApps.length) {
+            container.appendChild(availableApps[i]);
         }
     }
 
@@ -113,23 +105,25 @@ function prevPage() {
 
 async function addAppSelection() {
     document.addEventListener("keydown", (e) => {
-        const appsContainers = document.querySelectorAll(".entry");
 
-        const selected = document.querySelector(".entry.selected");
+        const selected = document.querySelector(".entry.selected") as HTMLDivElement;
         if (selected === null) {
-            return;
-        } else {
             console.log("Selected item is missing");
+            return;
         }
 
-        let index = Array.from(appsContainers).indexOf(selected);
+
+        let index = appsEntries.indexOf(selected);
+        let isFiltered = filter.textContent?.length != 0;
 
         switch (e.key) {
             case "ArrowUp":
                 e.preventDefault();
+                if (isFiltered) {
+                }
                 index -= 1;
                 if (index < currentPage * config.apps_per_page) {
-                    index = (index + appsContainers.length) % appsContainers.length;
+                    index = (index + appsEntries.length) % appsEntries.length;
                     prevPage();
                 }
                 break;
@@ -137,19 +131,19 @@ async function addAppSelection() {
                 e.preventDefault();
                 index += 1;
                 let lastIdxOnPage = currentPage * config.apps_per_page + config.apps_per_page - 1;
-                if (index > lastIdxOnPage || index >= appsContainers.length) {
-                    index = index % appsContainers.length;
+                if (index > lastIdxOnPage || index >= appsEntries.length) {
+                    index = index % appsEntries.length;
                     nextPage();
                 }
                 break;
             case "ArrowLeft":
                 e.preventDefault();
-                index = (index - config.apps_per_page + appsContainers.length) % appsContainers.length;
+                index = (index - config.apps_per_page + appsEntries.length) % appsEntries.length;
                 prevPage();
                 break;
             case "ArrowRight":
                 e.preventDefault();
-                index = (index + config.apps_per_page) % appsContainers.length;
+                index = (index + config.apps_per_page) % appsEntries.length;
                 nextPage();
                 break;
             case "Enter":
@@ -161,28 +155,27 @@ async function addAppSelection() {
         }
         console.log("index = ", index);
         selected.classList.remove("selected");
-        appsContainers[index].classList.add("selected");
+        appsEntries[index].classList.add("selected");
         //appsContainers[index].scrollIntoView({ behavior: "smooth" });
     })
 
 }
 
-function showFiltered() {
-    const filter = document.getElementById("filter") as HTMLInputElement;
-    let filterText = filter?.value.toLowerCase();
-    console.log(filterText);
-    let appContainers = Array.from(document.getElementsByClassName("entry")) as HTMLDivElement[];
+function filterApps() {
+    let filterText = filter.value.toLowerCase();
+
+    availableApps.length = 0;
 
     let app, appName;
-    appContainers.forEach(container => {
-        app = container.querySelector(".app-name") as HTMLDivElement;
+    appsEntries.forEach(entry => {
+        app = entry.querySelector(".app-name") as HTMLDivElement;
         appName = app.textContent || app.innerText;
         if (appName.toLowerCase().indexOf(filterText) > -1) {
-            container.hidden = false;
-        } else {
-            container.hidden = true;
+            availableApps.push(entry);
         }
     });
+
+    setPage(0);
 }
 
 function runApp(appName: string) {
@@ -213,17 +206,20 @@ async function main() {
 
     await createAppsEntries();
 
-    const filter = document.getElementById("filter") as HTMLInputElement;
-    filter.focus();
-    filter.oninput = showFiltered;
-
-    const firstApp = document.getElementById("app-list")?.firstElementChild;
-    if (firstApp) {
-        firstApp?.classList.add("selected");
-    } else {
-        console.log("First app entry not found");
+    if (appsEntries.length == 0) {
+        console.log("Apps entries lenght is 0, smth went wrong(");
         return;
     }
+
+    console.log(appsEntries);
+    availableApps = appsEntries.map(entry => entry.cloneNode(true) as HTMLDivElement);
+    console.log(availableApps);
+    setPage(0);
+    availableApps[0].classList.add("selected");
+
+    const filter = document.getElementById("filter") as HTMLInputElement;
+    filter.focus();
+    filter.oninput = filterApps;
 
     await addAppSelection();
 
