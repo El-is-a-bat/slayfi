@@ -12,14 +12,15 @@ interface App {
 interface SlayfiConfig {
     apps_per_page: number
 }
-
+// TODO remove?
 let apps: App[] = [];
 // TODO change to list?
 let appsEntries: HTMLDivElement[] = [];
 let availableApps: HTMLDivElement[] = [];
 let config: SlayfiConfig;
-let currentPage = 0;
 let maxPages: number;
+let currentPage = 0;
+let currentSelectedIdx = 0;
 const filter = document.getElementById("filter") as HTMLInputElement;
 const container = document.getElementById("app-list") as HTMLDivElement;
 
@@ -28,24 +29,27 @@ async function fetchApps() {
 }
 
 async function createAppsEntries() {
-    apps.forEach((app: App) => {
+    container.addEventListener("click", (e) => {
+        let clickedItem = e.target as HTMLDivElement;
+        let entry = clickedItem.closest(".entry") as HTMLDivElement;
+        if (entry) {
+            selectApp(entry);
+        } else {
+            console.log("somehow clicked item is not in entry");
+        }
+    });
+    container.addEventListener("dblclick", () => {
+        //const appName = entry.querySelector(".app-name")?.textContent;
+        //if (appName) {
+        //    runApp(appName);
+        //}
+    });
+
+    apps.forEach((app: App, idx) => {
         const entry = document.createElement("div");
         entry.className = "entry";
         entry.id = app.name;
 
-        entry.addEventListener("click", () => {
-            const previousSelected = document.querySelector(".entry.selected");
-            if (previousSelected) {
-                previousSelected.classList.remove("selected");
-            }
-            entry.classList.add("selected");
-        });
-        entry.addEventListener("dblclick", () => {
-            const appName = entry.querySelector(".app-name")?.textContent;
-            if (appName) {
-                runApp(appName);
-            }
-        });
 
         appsEntries.push(entry);
 
@@ -66,41 +70,49 @@ async function createAppsEntries() {
 
         const appName = document.createElement("div");
         appName.className = "app-name";
-        appName.textContent = app.name;
+        appName.textContent = idx + " " + app.name;
         appInfo.appendChild(appName);
     })
 
 }
 
-function selectItem(ind: number) {
+function selectAppByIdx(idx: number) {
+    availableApps[currentSelectedIdx].classList.remove("selected");
+    availableApps[idx].classList.add("selected");
+    currentSelectedIdx = idx;
+}
 
+function selectApp(element: HTMLDivElement) {
+    selectAppByIdx(availableApps.indexOf(element));
 }
 
 function setPage(page: number) {
-    console.log("Set page", currentPage);
+    currentPage = page;
 
     while (container.firstElementChild) {
         container.removeChild(container.lastElementChild!);
+    }
+
+    if (availableApps.length === 0) {
+        console.log("No available apps after filter");
+        return;
     }
 
     // TODO research for more elegant way
     for (let i = 0, idx; i < config.apps_per_page; i++) {
         idx = page * config.apps_per_page + i;
         if (idx < availableApps.length) {
-            container.appendChild(availableApps[i]);
+            container.appendChild(availableApps[idx]);
         }
     }
-
 }
 
 function nextPage() {
-    currentPage = (currentPage + 1) % maxPages;
-    setPage(currentPage);
+    setPage((currentPage + 1) % maxPages);
 }
 
 function prevPage() {
-    currentPage = (currentPage - 1 + maxPages) % maxPages;
-    setPage(currentPage);
+    setPage((currentPage - 1 + maxPages) % maxPages);
 }
 
 async function addAppSelection() {
@@ -112,38 +124,59 @@ async function addAppSelection() {
             return;
         }
 
+        let newSelectedIndex = currentSelectedIdx;
 
-        let index = appsEntries.indexOf(selected);
-        let isFiltered = filter.textContent?.length != 0;
+        //TODO handle if last page less than apps_per_page
+        // if page=0 and selectedIdx=0 and ArrowLeft, selected item outside page.
+        // if scroll by ArrowRight selected item also moves itself from existence
 
+        // outside of switch because of block scope
         switch (e.key) {
             case "ArrowUp":
                 e.preventDefault();
-                if (isFiltered) {
-                }
-                index -= 1;
-                if (index < currentPage * config.apps_per_page) {
-                    index = (index + appsEntries.length) % appsEntries.length;
+                newSelectedIndex -= 1;
+                if (newSelectedIndex < currentPage * config.apps_per_page) {
                     prevPage();
                 }
+                if (newSelectedIndex < 0) {
+                    newSelectedIndex = availableApps.length - 1;
+                }
+                selectAppByIdx(newSelectedIndex);
                 break;
             case "ArrowDown":
                 e.preventDefault();
-                index += 1;
+                newSelectedIndex += 1;
                 let lastIdxOnPage = currentPage * config.apps_per_page + config.apps_per_page - 1;
-                if (index > lastIdxOnPage || index >= appsEntries.length) {
-                    index = index % appsEntries.length;
+                if (newSelectedIndex > lastIdxOnPage || newSelectedIndex >= availableApps.length) {
                     nextPage();
                 }
+                if (newSelectedIndex >= availableApps.length) {
+                    newSelectedIndex = 0;
+                }
+                selectAppByIdx(newSelectedIndex);
                 break;
             case "ArrowLeft":
                 e.preventDefault();
-                index = (index - config.apps_per_page + appsEntries.length) % appsEntries.length;
+                newSelectedIndex = currentSelectedIdx - config.apps_per_page;
+                if (newSelectedIndex < 0) {
+                    newSelectedIndex = (maxPages - 1) * config.apps_per_page + currentSelectedIdx;
+                    if (newSelectedIndex >= availableApps.length) {
+                        newSelectedIndex = availableApps.length - 1;
+                    }
+                }
                 prevPage();
+                selectAppByIdx(newSelectedIndex);
                 break;
             case "ArrowRight":
                 e.preventDefault();
-                index = (index + config.apps_per_page) % appsEntries.length;
+                newSelectedIndex = currentSelectedIdx + config.apps_per_page;
+                if (newSelectedIndex > availableApps.length) {
+                    newSelectedIndex = newSelectedIndex % availableApps.length - 1;
+                }
+                if (newSelectedIndex === availableApps.length) {
+                    newSelectedIndex = availableApps.length - 1;
+                }
+                selectAppByIdx(newSelectedIndex);
                 nextPage();
                 break;
             case "Enter":
@@ -153,15 +186,13 @@ async function addAppSelection() {
                 }
                 break;
         }
-        console.log("index = ", index);
-        selected.classList.remove("selected");
-        appsEntries[index].classList.add("selected");
-        //appsContainers[index].scrollIntoView({ behavior: "smooth" });
     })
 
 }
 
 function filterApps() {
+    // TODO highlight the entered charackters 
+    // TODO search regardless onf the input language
     let filterText = filter.value.toLowerCase();
 
     availableApps.length = 0;
@@ -175,6 +206,7 @@ function filterApps() {
         }
     });
 
+    maxPages = Math.ceil(apps.length / config.apps_per_page);
     setPage(0);
 }
 
@@ -202,7 +234,7 @@ async function main() {
         return;
     }
 
-    maxPages = Math.ceil(apps.length / config.apps_per_page)
+    maxPages = Math.ceil(apps.length / config.apps_per_page);
 
     await createAppsEntries();
 
@@ -211,19 +243,15 @@ async function main() {
         return;
     }
 
-    console.log(appsEntries);
     availableApps = appsEntries.map(entry => entry.cloneNode(true) as HTMLDivElement);
-    console.log(availableApps);
-    setPage(0);
     availableApps[0].classList.add("selected");
+    setPage(0);
 
     const filter = document.getElementById("filter") as HTMLInputElement;
     filter.focus();
     filter.oninput = filterApps;
 
     await addAppSelection();
-
-    await invoke("set_application_size", { width: 50, height: 50 });
 }
 
 main();
