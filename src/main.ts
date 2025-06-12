@@ -3,10 +3,9 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 
 interface App {
     name: string;
-    icon_path: string;
-    app_path_exe: string;
-    app_desktop_path: string;
-    //times_runned: number;
+    comment: string;
+    icon: string;
+    exec: string;
 }
 
 interface SlayfiConfig {
@@ -25,7 +24,7 @@ const filter = document.getElementById("filter") as HTMLInputElement;
 const container = document.getElementById("app-list") as HTMLDivElement;
 
 async function fetchApps() {
-    apps = await invoke("list_applications");
+    apps = await invoke("list_desktop_applications");
 }
 
 async function createAppsEntries() {
@@ -45,11 +44,10 @@ async function createAppsEntries() {
         //}
     });
 
-    apps.forEach((app: App, idx) => {
+    apps.forEach((app: App) => {
         const entry = document.createElement("div");
         entry.className = "entry";
         entry.id = app.name;
-
 
         appsEntries.push(entry);
 
@@ -64,16 +62,15 @@ async function createAppsEntries() {
         entry.appendChild(appInfo);
 
         const appIcon = document.createElement("img");
-        appIcon.src = convertFileSrc(app.icon_path);
+        appIcon.src = convertFileSrc(app.icon);
         appIcon.className = "app-icon";
         appInfo.appendChild(appIcon);
 
         const appName = document.createElement("div");
         appName.className = "app-name";
-        appName.textContent = idx + " " + app.name;
+        appName.textContent = app.name;
         appInfo.appendChild(appName);
     })
-
 }
 
 function selectAppByIdx(idx: number) {
@@ -104,6 +101,9 @@ function setPage(page: number) {
         if (idx < availableApps.length) {
             container.appendChild(availableApps[idx]);
         }
+    }
+    if (!currentSelectedIdx){
+    (container.firstChild as HTMLDivElement).classList.add("selected");
     }
 }
 
@@ -211,7 +211,11 @@ function filterApps() {
 }
 
 function runApp(appName: string) {
-    invoke("start_program", { "exec": apps.find(app => app.name == appName)?.app_path_exe });
+    let app = apps.find(app => app.name == appName);
+    if (app) {
+        console.log("Running {} with command: {}", appName, app.exec);
+        invoke("start_program", { "exec": app.exec });
+    }
 }
 
 window.addEventListener("keydown", (event) => {
@@ -244,7 +248,7 @@ async function main() {
     }
 
     availableApps = appsEntries.map(entry => entry.cloneNode(true) as HTMLDivElement);
-    availableApps[0].classList.add("selected");
+    selectAppByIdx(0);
     setPage(0);
 
     const filter = document.getElementById("filter") as HTMLInputElement;
@@ -252,6 +256,10 @@ async function main() {
     filter.oninput = filterApps;
 
     await addAppSelection();
+
+    let apps2 = await invoke("list_applications");
+    console.log(apps);
+    console.log(apps2);
 }
 
 main();
