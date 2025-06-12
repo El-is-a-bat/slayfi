@@ -4004,7 +4004,9 @@ dependencies = [
 name = "slayfi"
 version = "0.1.0"
 dependencies = [
- "applications",
+ "chrono",
+ "env_logger",
+ "freedesktop-file-parser",
  "gtk",
  "gtk-layer-shell",
  "itertools 0.14.0",

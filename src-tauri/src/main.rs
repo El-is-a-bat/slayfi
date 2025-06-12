@@ -21,7 +21,7 @@ fn main() {
             gtk_window.set_resizable(true);
 
             gtk_window.set_width_request(400);
-            gtk_window.set_height_request(400);
+            gtk_window.set_height_request(270);
 
             Ok(())
         })

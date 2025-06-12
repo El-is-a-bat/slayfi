@@ -170,11 +170,21 @@ async function addAppSelection() {
             case "ArrowRight":
                 e.preventDefault();
                 newSelectedIndex = currentSelectedIdx + config.apps_per_page;
+                // Used to determine if we need to shift index when moving to first page
+                const isEvenlyDivisible = availableApps.length % config.apps_per_page === 0;
                 if (newSelectedIndex > availableApps.length) {
-                    newSelectedIndex = newSelectedIndex % availableApps.length - 1;
+                    //newSelectedIndex = maxPages * config.apps_per_page - currentSelectedIdx - (isEvenlyDivisible ? 0 : 1);
+                    newSelectedIndex = newSelectedIndex % (maxPages * config.apps_per_page);
                 }
                 if (newSelectedIndex === availableApps.length) {
-                    newSelectedIndex = availableApps.length - 1;
+                    // Like if apps.lenght = 90, apps_per_page = 5 and currentSelectedIdx = 85, then newSelectedIndex = 0
+                    // because instead new selected item would be on last page, but we move to first page
+                    if (isEvenlyDivisible) {
+                        newSelectedIndex = 0;
+                    } else {
+                        newSelectedIndex = availableApps.length - (isEvenlyDivisible ? 0 : 1);
+                    }
+                    console.log("Right 3: " + newSelectedIndex);
                 }
                 selectAppByIdx(newSelectedIndex);
                 nextPage();
@@ -202,12 +212,13 @@ function filterApps() {
         app = entry.querySelector(".app-name") as HTMLDivElement;
         appName = app.textContent || app.innerText;
         if (appName.toLowerCase().indexOf(filterText) > -1) {
-            availableApps.push(entry);
+            availableApps.push(entry.cloneNode(true) as HTMLDivElement);
         }
     });
 
     maxPages = Math.ceil(apps.length / config.apps_per_page);
     setPage(0);
+    selectAppByIdx(0);
 }
 
 function runApp(appName: string) {
@@ -244,7 +255,10 @@ async function main() {
     }
 
     availableApps = appsEntries.map(entry => entry.cloneNode(true) as HTMLDivElement);
-    availableApps[0].classList.add("selected");
+    // availableApps.pop();
+    // availableApps.pop();
+    // availableApps.pop();
+    selectAppByIdx(0);
     setPage(0);
 
     const filter = document.getElementById("filter") as HTMLInputElement;
@@ -252,6 +266,8 @@ async function main() {
     filter.oninput = filterApps;
 
     await addAppSelection();
+
+    console.log(apps);
 }
 
 main();

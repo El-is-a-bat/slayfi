@@ -27,6 +27,11 @@ gtk-layer-shell = { version = "0.8.2", features = ["v0_6"] }
 tauri-plugin-process = "2"
 applications = "0.3.1"
 itertools = "0.14.0"
+freedesktop-file-parser = "0.2.0"
+walkdir = "2.5.0"
+log = "0.4.27"
+env_logger = "0.11.3"
+chrono = "0.4"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"
