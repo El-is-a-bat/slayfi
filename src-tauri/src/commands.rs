@@ -8,6 +8,25 @@ use std::fs::OpenOptions;
 use std::io::Write;
 use std::process::Command;
 use tauri::{Manager, PhysicalSize, Size};
+use walkdir::WalkDir;
+
+#[derive(Serialize, Deserialize)]
+pub struct Application {
+    pub name: String,
+    pub comment: String,
+    pub icon: String,
+    pub exec: String,
+}
+
+impl std::fmt::Display for Application {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "\n\tName:\t{},\n\tComment:\t{},\n\tIcon:\t{},\n\tExec:\t{}\n",
+            self.name, self.comment, self.icon, self.exec
+        )
+    }
+}
 
 #[tauri::command]
 pub fn exit(app_handle: tauri::AppHandle) {

@@ -4,9 +4,15 @@
 mod commands;
 
 use gtk::prelude::*;
+use log::LevelFilter;
 use tauri::Manager;
 
 fn main() {
+    // Initialize logger
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug"))
+        .filter_level(LevelFilter::Debug)
+        .init();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
@@ -27,10 +33,10 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::exit,
-            commands::list_applications,
             commands::start_program,
             commands::get_config,
-            commands::set_application_size
+            commands::set_application_size,
+            commands::list_desktop_applications
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri app");
