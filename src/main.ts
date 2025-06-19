@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { convertFileSrc } from "@tauri-apps/api/core";
 
+
 interface App {
     name: string;
     comment: string;
@@ -44,7 +45,9 @@ async function createAppsEntries() {
         //}
     });
 
-    apps.forEach((app: App) => {
+    const isDev = await invoke<boolean>("is_dev");
+
+    apps.forEach((app: App, index: number) => {
         const entry = document.createElement("div");
         entry.className = "entry";
         entry.id = app.name;
@@ -65,6 +68,12 @@ async function createAppsEntries() {
         appIcon.src = convertFileSrc(app.icon);
         appIcon.className = "app-icon";
         appInfo.appendChild(appIcon);
+
+        if (isDev) {
+            const elementIdx = document.createElement("div");
+            elementIdx.textContent = `[${index}] `;
+            appInfo.appendChild(elementIdx);
+        }
 
         const appName = document.createElement("div");
         appName.className = "app-name";
@@ -101,9 +110,6 @@ function setPage(page: number) {
         if (idx < availableApps.length) {
             container.appendChild(availableApps[idx]);
         }
-    }
-    if (!currentSelectedIdx){
-    (container.firstChild as HTMLDivElement).classList.add("selected");
     }
 }
 
@@ -170,11 +176,15 @@ async function addAppSelection() {
             case "ArrowRight":
                 e.preventDefault();
                 newSelectedIndex = currentSelectedIdx + config.apps_per_page;
-                // Used to determine if we need to shift index when moving to first page
+                // used to determine if we need to shift index when moving to first page
                 const isEvenlyDivisible = availableApps.length % config.apps_per_page === 0;
                 if (newSelectedIndex > availableApps.length) {
-                    //newSelectedIndex = maxPages * config.apps_per_page - currentSelectedIdx - (isEvenlyDivisible ? 0 : 1);
-                    newSelectedIndex = newSelectedIndex % (maxPages * config.apps_per_page);
+                    if (currentPage === maxPages - 2) {
+                        newSelectedIndex = availableApps.length - 1
+                    }
+                    if (currentPage === maxPages - 1) {
+                        newSelectedIndex = newSelectedIndex % (maxPages * config.apps_per_page);
+                    }
                 }
                 if (newSelectedIndex === availableApps.length) {
                     // Like if apps.lenght = 90, apps_per_page = 5 and currentSelectedIdx = 85, then newSelectedIndex = 0
@@ -184,7 +194,6 @@ async function addAppSelection() {
                     } else {
                         newSelectedIndex = availableApps.length - (isEvenlyDivisible ? 0 : 1);
                     }
-                    console.log("Right 3: " + newSelectedIndex);
                 }
                 selectAppByIdx(newSelectedIndex);
                 nextPage();
@@ -266,6 +275,7 @@ async function main() {
     filter.focus();
     filter.oninput = filterApps;
 
+    console.log(apps);
     await addAppSelection();
 }
 

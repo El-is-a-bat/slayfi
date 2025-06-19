@@ -36,7 +36,8 @@ fn main() {
             commands::start_program,
             commands::get_config,
             commands::set_application_size,
-            commands::list_desktop_applications
+            commands::list_desktop_applications,
+            commands::is_dev
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri app");
