@@ -225,7 +225,7 @@ function filterApps() {
         }
     });
 
-    maxPages = Math.ceil(apps.length / config.apps_per_page);
+    maxPages = Math.ceil(availableApps.length / config.apps_per_page);
     setPage(0);
     selectAppByIdx(0);
 }
@@ -241,6 +241,13 @@ function runApp(appName: string) {
 window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
         invoke("exit").then(() => console.log("Exiting app"));
+    }
+});
+
+// disable arrow key actions for the filter input
+filter.addEventListener("keydown", (e) => {
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
     }
 });
 
