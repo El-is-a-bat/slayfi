@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::env;
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::path::Path;
 use std::process::Command;
 use tauri::{Manager, PhysicalSize, Size};
 use walkdir::WalkDir;
@@ -125,7 +126,7 @@ pub fn list_desktop_applications() -> Vec<Application> {
             // skip if no exec field
             let app_exec = match application.exec.clone() {
                 Some(exec) => {
-                    let cleaned = clean_exec_command(exec);
+                    let cleaned = clean_exec_command(exec, &desktop_entry.name.default);
                     match application.terminal {
                         Some(is_terminal) => {
                             if is_terminal {
@@ -302,14 +303,35 @@ fn log_to_file(message: &str) {
     }
 }
 
-fn clean_exec_command(exec: String) -> String {
-    // is a separate function because at first I decided to remove some args,
+fn clean_exec_command(exec: String, app_name: &str) -> String {
+    // update 1: is a separate function because at first I decided to remove some args,
     // like `%U` and `%f`, but then decided not to use them at all because of
     // some weird results like:
     //      `vlc --started-from-file` or
     //      `cursor --no-sandbox`
     // (both without `%U` at the end)
-    exec.split_whitespace().next().unwrap_or(&exec).to_string()
+
+    // update 2: WinBox has some weird exec => `/usr/bin/env --unset=QT_QPA_PLATFORM /usr/bin/Winbox`
+    // so getting the first split element (to skip args) won't help
+    //
+    // this function now splits the exec string by whitespace, then iterates through the elements;
+    // when an element (case-insensitive, basename only) matches the app name, it includes all 
+    // elements up to and including that one, and ignores the rest.
+    let parts: Vec<&str> = exec.split_whitespace().collect();
+    let app_name_lower = app_name.to_lowercase();
+    let mut result = Vec::new();
+    for part in &parts {
+        result.push(*part);
+        let base = Path::new(part)
+            .file_name()
+            .map(|s| s.to_string_lossy().to_lowercase());
+        if let Some(base) = base {
+            if base == app_name_lower {
+                break;
+            }
+        }
+    }
+    result.join(" ")
 }
 
 fn get_kde_icon_theme() -> Option<String> {
