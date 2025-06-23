@@ -1,7 +1,7 @@
-# Tauri + Vanilla TS
+# What is this project
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
-
-## Recommended IDE Setup
-
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+I've used some application launchers like ROFI and WOFI, and they may be edited to suit my needs 
+(Cyberpunk 2077 design, different animations, etc.), 
+but the differences between GTK and Web CSS, as well as the much greater capabilities 
+of the second pushed me to create this project
+So, this is an app runner with the power of web styling 
