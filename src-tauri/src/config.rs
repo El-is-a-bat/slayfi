@@ -52,6 +52,13 @@ fn get_cyberdeck_config_path() -> Result<PathBuf, String> {
     Ok(PathBuf::from(path))
 }
 
+fn get_cyberdeck_data_path() -> Result<PathBuf, String> {
+    let home =
+        std::env::var("HOME").map_err(|e| format!("HOME environment variable not set: {e}"))?;
+    let path = format!("{home}/.local/share/cyberdeck");
+    Ok(PathBuf::from(path))
+}
+
 pub fn load_or_create_config() -> Result<CyberdeckConfig, String> {
     let config_path = get_cyberdeck_config_path()?;
     info!("Attempting to load config from {config_path:?}");
